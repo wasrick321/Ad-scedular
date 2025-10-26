@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Ad Slot Allocation (Greedy + Kruskal + Knapsack)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8fafc; padding: 30px; }
+    h2 { color: #222; }
+    table, th, td { border: 1px solid #ddd; border-collapse: collapse; padding: 8px; }
+    th { background: #222; color: white; }
+    button { background: #0078ff; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+    .output { background: #fff; padding: 15px; margin-top: 18px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  </style>
+</head>
+<body>
+  <h2>Online Ad Slot Allocation</h2>
+  <p>Greedy by bid/duration ratio + conflict-free selection (capacity-limited)</p>
+
+  <table id="ads-table">
+    <tr><th>ID</th><th>Start</th><th>End</th><th>Bid (₹)</th></tr>
+    <tr><td>1</td><td>1</td><td>3</td><td>50</td></tr>
+    <tr><td>2</td><td>2</td><td>5</td><td>60</td></tr>
+    <tr><td>3</td><td>4</td><td>6</td><td>70</td></tr>
+    <tr><td>4</td><td>6</td><td>9</td><td>90</td></tr>
+    <tr><td>5</td><td>8</td><td>10</td><td>40</td></tr>
+  </table>
+
+  <div style="margin-top:12px">
+    Capacity (total ad time): <input id="capacity" type="number" value="10" style="width:70px" />
+    <button onclick="allocate()">Allocate</button>
+  </div>
+
+  <div class="output" id="result"></div>
+
+  <script>
+  function allocate() {
+    const capacity = parseInt(document.getElementById('capacity').value, 10) || 0;
+    const ads = [
+      {id:1, start:1, end:3, bid:50},
+      {id:2, start:2, end:5, bid:60},
+      {id:3, start:4, end:6, bid:70},
+      {id:4, start:6, end:9, bid:90},
+      {id:5, start:8, end:10, bid:40}
+    ];
+    ads.forEach(a => a.duration = a.end - a.start);
+    ads.forEach(a => a.ratio = a.bid / a.duration);
+    ads.sort((a,b) => b.ratio - a.ratio);
+
+    function overlap(a,b){return !(a.end <= b.start || b.end <= a.start);}
+
+    const schedule = [];
+    let totalTime = 0, profit = 0;
+    for (const ad of ads) {
+      let conflict = false;
+      for (const s of schedule) if (overlap(ad,s)) { conflict = true; break; }
+      if (!conflict && totalTime + ad.duration <= capacity) {
+        schedule.push(ad);
+        totalTime += ad.duration;
+        profit += ad.bid;
+      }
+    }
+
+    const html = [`<h3>Final Allocation</h3>`];
+    if (schedule.length === 0) html.push('<em>No ads selected (capacity or conflicts)</em>');
+    else html.push(schedule.map(a => `Ad ${a.id} [${a.start}-${a.end}] → ₹${a.bid}`).join('<br>'));
+    html.push(`<br><br><b>Total Time Used: ${totalTime} / ${capacity}</b>`);
+    html.push(`<br><b>Total Profit: ₹${profit}</b>`);
+
+    document.getElementById('result').innerHTML = html.join('');
+  }
+  </script>
+</body>
+</html>
